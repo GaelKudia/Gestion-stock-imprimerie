@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Liste des Produits - Imprimerie{% endblock %}
+
+{% block body %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div>
+        <h1 style="color: #1e293b; font-size: 24px; font-weight: 700; margin: 0;">Catalogue des Produits</h1>
+        <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Consultez et gérez les matières premières de l'imprimerie.</p>
+    </div>
+    <a href="{{ path('app_produit_new') }}" class="btn-action btn-add">+ Ajouter un produit</a>
+</div>
+
+<div class="table-card">
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Désignation du produit</th>
+                <th>Quantité en Stock</th>
+                <th>Seuil d'Alerte</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for produit in produits %}
+            <tr>
+                <td style="color: #94a3b8; font-weight: 600;">#{{ produit.id }}</td>
+                <td style="font-weight: 600; color: #1e293b;">{{ produit.nom }}</td>
+                <td>
+                    <span style="font-weight: 600;">{{ produit.quantite }}</span> unités
+                </td>
+                <td>{{ produit.seuilAlerte }} unités</td>
+                <td style="text-align: right;">
+                    <a href="{{ path('app_produit_show', {'id': produit.id}) }}" class="btn-action btn-edit">Voir</a>
+                    <a href="{{ path('app_produit_edit', {'id': produit.id}) }}" class="btn-action btn-edit" style="background-color: #e0f2fe; color: #0369a1;">Modifier</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
+                    Aucun produit n'est enregistré dans le stock pour le moment.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

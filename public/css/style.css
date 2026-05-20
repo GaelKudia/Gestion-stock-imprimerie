@@ -1,0 +1,198 @@
+/* Fond d'écran avec le dégradé bleu dynamique de ta maquette */
+body {
+    background: linear-gradient(135deg, #1572e8 0%, #0c56b5 100%) !important;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 15px;
+}
+
+/* Masquer la barre de navigation pour la mire de connexion */
+nav {
+    display: none !important;
+}
+
+/* La carte centrale blanche */
+.login-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: 40px 35px;
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+/* Le titre principal "Connexion" */
+.login-title {
+    color: #2d3748;
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+/* Le sous-titre de versioning */
+.login-subtitle {
+    color: #718096;
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+/* Style des champs de saisie */
+.form-group-custom {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form-control-custom {
+    width: 100%;
+    padding: 14px 16px 14px 45px !important; /* Espace à gauche pour l'icône */
+    font-size: 16px;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    background-repeat: no-repeat;
+    background-position: 15px center;
+    background-size: 18px;
+}
+
+/* Icône Enveloppe pour l'Email (SVG local) */
+.input-email {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5568'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'/%3E%3C/svg%3E");
+}
+
+/* Icône Cadenas pour le Mot de passe (SVG local) */
+.input-password {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5568'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'/%3E%3C/svg%3E");
+}
+
+.form-control-custom:focus {
+    outline: none;
+    border-color: #1572e8 !important;
+    box-shadow: 0 0 0 3px rgba(21, 114, 232, 0.15) !important;
+}
+
+/* Bouton de connexion gris/plat comme sur ton modèle */
+.btn-custom {
+    width: 100%;
+    padding: 14px !important;
+    background-color: #e2e8f0 !important;
+    color: #718096 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+.btn-custom:hover {
+    background-color: #cbd5e1 !important;
+    color: #4a5568 !important;
+}
+/* le bloc au dessus est le bloc pour le design de la page de login */
+
+/* --- STYLES POUR L'ESPACE PRODUITS (DASHBOARD) --- */
+
+/* Conteneur principal pour le contenu de l'application */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* Style de la barre de navigation supérieure */
+.navbar-custom {
+    background: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-brand-custom {
+    color: #1572e8 !important;
+    font-weight: 700;
+    font-size: 20px;
+    text-decoration: none;
+}
+
+/* Les cartes et tableaux de données */
+.table-card {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.table-custom th {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 13px;
+    padding: 14px;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: left;
+}
+
+.table-custom td {
+    padding: 14px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 15px;
+}
+
+.table-custom tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Boutons d'action */
+.btn-action {
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-add {
+    background-color: #1572e8;
+    color: #ffffff;
+}
+
+.btn-add:hover {
+    background-color: #0c56b5;
+}
+
+.btn-edit {
+    background-color: #f1f5f9;
+    color: #475569;
+    margin-right: 5px;
+}
+
+.btn-edit:hover {
+    background-color: #e2e8f0;
+}
+
+.btn-delete {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
