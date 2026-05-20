@@ -1,0 +1,151 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Espace Département - Imprimerie{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    {# Messages de succès #}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border-start border-success border-5">
+        <h1 class="display-5 fw-bold">Espace Département 👋</h1>
+        <p class="col-md-8 fs-4">Suivi des demandes d'articles et émargements pour votre service.</p>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <h3>📦 Historique de nos demandes</h3>
+        {# BOUTON UNIQUE MODIFIÉ ICI #}
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUnique">➕ Nouvelle Action (Demande / RDV)</button>
+    </div>
+
+    {# Tableau de l'historique #}
+    <table class="table table-hover mt-3 align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>N° Demande</th>
+                <th>Articles demandés</th>
+                <th>Date</th>
+                <th>Statut</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for demande in demandes %}
+            <tr>
+                <td>#{{ demande.id }}</td>
+                <td><strong>{{ demande.materiel }}</strong> <span class="text-muted">(x{{ demande.quantite|default(1) }})</span></td>
+                
+                <td>
+                    {% if demande.dateDemande is defined %}
+                        {{ demande.dateDemande|date('d/m/Y H:i') }}
+                    {% else %}
+                        {{ demande.date|default('Date inconnue') }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if 'signature' in demande.statut or 'émarger' in demande.statut %}
+                        <span class="badge bg-warning text-dark">{{ demande.statut }}</span>
+                    {% elseif 'attente' in demande.statut %}
+                        <span class="badge bg-info text-dark">{{ demande.statut }}</span>
+                    {% else %}
+                        <span class="badge bg-success">{{ demande.statut }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if 'signature' in demande.statut or 'émarger' in demande.statut %}
+                        <button class="btn btn-sm btn-success">✍️ Émarger la réception</button>
+                    {% else %}
+                        <span class="text-muted">Aucune action requise</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-muted py-4">Aucune demande enregistrée pour le moment. Cliquez sur le bouton ci-dessus pour faire votre première demande !</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="modalUnique" tabindex="-1" aria-labelledby="modalUniqueLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content text-dark">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="modalUniqueLabel">✨ Formulaire d'action</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label fw-bold" for="selectTypeAction">Que souhaitez-vous faire ?</label>
+                    <select class="form-select border-primary" id="selectTypeAction">
+                        <option value="choix_demande" selected>📦 Faire une demande de matériel</option>
+                        <option value="choix_rdv">📅 Programmer un Rendez-vous (Visiteur)</option>
+                    </select>
+                </div>
+
+                <hr>
+
+                <div id="blocDemande">
+                    {{ form_start(form) }}
+                        <div class="mb-3">
+                            {{ form_row(form.materiel) }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form_row(form.quantite) }}
+                        </div>
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-success">🚀 Envoyer la demande</button>
+                        </div>
+                    {{ form_end(form) }}
+                </div>
+
+                <div id="blocRdv" style="display: none;">
+                    {{ form_start(formVisite) }}
+                        <div class="mb-3">
+                            {{ form_row(formVisite.nomVisiteur) }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form_row(formVisite.institutionHote) }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form_row(formVisite.heureRdv) }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form_row(formVisite.motif) }}
+                        </div>
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-primary">💾 Enregistrer le RDV</button>
+                        </div>
+                    {{ form_end(formVisite) }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('selectTypeAction').addEventListener('change', function() {
+        var blocDemande = document.getElementById('blocDemande');
+        var blocRdv = document.getElementById('blocRdv');
+        
+        if (this.value === 'choix_demande') {
+            blocDemande.style.display = 'block';
+            blocRdv.style.display = 'none';
+        } else {
+            blocDemande.style.display = 'none';
+            blocRdv.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}
