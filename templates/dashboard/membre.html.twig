@@ -84,7 +84,7 @@
 
         <div class="row g-4">
             
-            {% if userRole != 'ROLE_COORDON' and userRole != 'ROLE_STOCK' %}
+            {% if userRole != 'ROLE_COORDON' and userRole != 'ROLE_STOCK' and not is_granted('ROLE_GUERITE') %}
             <div class="col-xl-4 col-lg-5">
                 <div class="card border-0 shadow-sm mb-4" style="border-top: 4px solid #0d6efd !important;">
                     <div class="card-header bg-white py-3">
@@ -98,7 +98,7 @@
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm" style="border-top: 4px solid #198754 !important;">
+                <div class="card border-0 shadow-sm mb-4" style="border-top: 4px solid #198754 !important;">
                     <div class="card-header bg-white py-3">
                         <h5 class="card-title m-0 fw-bold"><i class="fas fa-file-invoice text-success me-2"></i>Créer un Bon de Sortie</h5>
                     </div>
@@ -112,8 +112,8 @@
             </div>
             {% endif %}
 
-            <div class="{% if userRole == 'ROLE_COORDON' or userRole == 'ROLE_STOCK' %}col-12{% else %}col-xl-8 col-lg-7{% endif %}">
-                <div class="card border-0 shadow-sm">
+            <div class="{% if userRole == 'ROLE_COORDON' or userRole == 'ROLE_STOCK' or userRole == 'ROLE_GUERITE' %}col-12{% else %}col-xl-8 col-lg-7{% endif %}">
+                <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white p-0 border-bottom">
                         <ul class="nav nav-tabs card-header-tabs m-0 border-bottom-0" id="memberTab" role="tablist">
                             <li class="nav-item">
@@ -140,7 +140,6 @@
                                                 <th>ID</th>
                                                 <th>Département</th>
                                                 <th>Matériel</th>
-                                                <th>Quantité</th>
                                                 <th>Statut</th>
                                                 {% if userRole == 'ROLE_STOCK' %}<th class="text-center">Action Stock</th>{% endif %}
                                             </tr>
@@ -151,7 +150,6 @@
                                                     <td class="fw-bold">#{{ d.id }}</td>
                                                     <td><span class="badge bg-secondary bg-opacity-10 text-secondary border px-2 py-1">{{ d.departement }}</span></td>
                                                     <td class="fw-semibold text-dark">{{ d.materiel }}</td>
-                                                    <td><span class="badge bg-light text-dark border px-2 py-1">{{ d.quantite }}</span></td>
                                                     <td><span class="badge rounded-pill px-2.5 py-1 bg-warning text-dark">{{ d.statut }}</span></td>
                                                     
                                                     {% if userRole == 'ROLE_STOCK' %}
@@ -163,7 +161,7 @@
                                                     {% endif %}
                                                 </tr>
                                             {% else %}
-                                                <tr><td colspan="6" class="text-center py-4 text-muted">Aucune demande logistique enregistrée.</td></tr>
+                                                <tr><td colspan="5" class="text-center py-4 text-muted">Aucune demande logistique enregistrée.</td></tr>
                                             {% endfor %}
                                         </tbody>
                                     </table>
@@ -211,11 +209,39 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-        </div>
-    </div>
+                {% if not is_granted('ROLE_GUERITE') and formVisite is not null %}
+                <div class="card border-0 shadow-sm mt-4" style="border-top: 4px solid #ffc107 !important;">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title m-0 fw-bold text-warning"><i class="fas fa-calendar-alt me-2"></i>Réserver une Visite</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form_start(formVisite) }}
+                            <div class="row">
+                                {# 1. Nom du visiteur #}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold">Nom du Visiteur</label>
+                                    {{ form_widget(formVisite.nomVisiteur, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Jean Dupont'}}) }}
+                                </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+                                {# 2. Département Visité #}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold">Département Visité</label>
+                                    {{ form_widget(formVisite.departement, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Impression'}}) }}
+                                </div>
+
+                                {# 3. Motif de la visite #}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold">Motif de la visite</label>
+                                    {{ form_widget(formVisite.motif, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Réunion, Maintenance'}}) }}
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100 text-white fw-bold mt-2">Enregistrer la Visite</button>
+                        {{ form_end(formVisite) }}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div> </div> </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
