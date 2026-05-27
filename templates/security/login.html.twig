@@ -1,79 +1,82 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Connexion - Imprimerie Gérant</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-</head>
-<body class="bg-secondary bg-opacity-10">
+{% extends 'base.html.twig' %}
 
-    {# Écran de connexion totalement isolé, aucun menu ne peut s'infiltrer ici #}
-    <div class="d-flex align-items-center justify-content-center" style="min-height: 100vh; width: 100vw;">
-        
-        <div class="login-box shadow-lg rounded p-4 bg-white" style="width: 100%; max-width: 400px; border-top: 4px solid #dc3545;">
+{% block title %}Connexion - Dispromalt{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
             
-            <div class="login-logo text-center mb-4">
-                <h2 class="fw-bold m-0 text-dark">
-                    <i class="fas fa-print text-danger me-2"></i><b>Admin</b>LTE
-                </h2>
-                <small class="text-muted text-uppercase tracking-wider font-monospace" style="font-size: 11px;">
-                    Gestion des Flux & Sécurité
-                </small>
-            </div>
+            {# Carte de connexion principale #}
+            <div class="card border-0 shadow-lg p-4 bg-white mt-5" style="border-radius: 16px;">
+                
+                {# Header de la carte : Logo et Identité #}
+                <div class="text-center mb-4">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="fas fa-print text-primary fa-2x me-2"></i>
+                        <h2 class="fw-bold m-0 text-dark" style="letter-spacing: -0.5px;">
+                            Dispro<span class="text-primary">malt</span>
+                        </h2>
+                    </div>
+                    <p class="text-muted small m-0">Espace de Connexion Opérationnel</p>
+                </div>
 
-            <div class="card-body login-card-body p-0">
-                <p class="login-box-msg text-center text-muted small mb-4">
-                    Identifiez-vous pour démarrer votre session de travail
-                </p>
+                {# Gestion des erreurs de sécurité Symfony #}
+                {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show small shadow-sm mb-3" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i> {{ error.messageKey|trans(error.messageData, 'security') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
 
+                {# Formulaire de connexion #}
                 <form method="post">
-                    {% if error %}
-                        <div class="alert alert-danger shadow-sm border-0 mb-3 small d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <div>{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-                        </div>
-                    {% endif %}
-
-                    <div class="input-group mb-3 shadow-sm">
-                        <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" placeholder="Adresse Email" autocomplete="email" required autofocus>
-                        <div class="input-group-text bg-light text-muted border-start-0">
-                            <span class="fas fa-envelope"></span>
+                    
+                    <div class="mb-3">
+                        <label for="inputEmail" class="form-label small fw-bold text-secondary">Adresse Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-envelope"></i></span>
+                            <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control py-2 border-start-0 bg-light" placeholder="nom@entreprise.com" autocomplete="email" required autofocus>
                         </div>
                     </div>
 
-                    <div class="input-group mb-4 shadow-sm">
-                        <input type="password" name="password" id="inputPassword" class="form-control" placeholder="Mot de passe" autocomplete="current-password" required>
-                        <div class="input-group-text bg-light text-muted border-start-0">
-                            <span class="fas fa-lock"></span>
+                    <div class="mb-3">
+                        <label for="inputPassword" class="form-label small fw-bold text-secondary">Mot de Passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-lock"></i></span>
+                            <input type="password" name="password" id="inputPassword" class="form-control py-2 border-start-0 bg-light" placeholder="••••••••" autocomplete="current-password" required>
                         </div>
                     </div>
 
+                    {# Token CSRF de sécurité obligatoire #}
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-                    <div class="row align-items-center">
-                        <div class="col-7">
-                            <div class="form-check m-0">
-                                <input class="form-check-input" type="checkbox" name="_remember_me" id="remember_me">
-                                <label class="form-check-label small text-muted fw-semibold" for="remember_me">
-                                    Se souvenir de moi
-                                </label>
-                            </div>
+                    {# Option Se souvenir de moi (activé dans ton security.yaml) #}
+                    <div class="form-check mb-4 small d-flex justify-content-between align-items-center">
+                        <div>
+                            <input class="form-check-input" type="checkbox" name="_remember_me" id="_remember_me" checked>
+                            <label class="form-check-input-label text-muted" for="_remember_me">Se souvenir de moi</label>
                         </div>
-                        <div class="col-5">
-                            <button class="btn btn-danger btn-block w-100 fw-bold shadow-sm" type="submit">
-                                <i class="fas fa-sign-in-alt me-1"></i> Connexion
-                            </button>
-                        </div>
+                        <a href="#" class="text-decoration-none small text-primary">Mot de passe oublié ?</a>
                     </div>
+
+                    {# Bouton de Soumission Principal Bleu #}
+                    <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" type="submit">
+                        Se Connecter <i class="fas fa-sign-in-alt ms-2"></i>
+                    </button>
                 </form>
-                
+
+                <hr class="text-muted my-4 opacity-25">
+
+                {# Footer Interne #}
+                <div class="text-center small text-muted">
+                    <p class="m-0">&copy; {{ 'now'|date('Y') }} Dispromalt - Tous Droits Réservés</p>
+                    <small>Besoin d'aide ? <a href="#" class="text-primary text-decoration-none">Contactez-nous</a></small>
+                </div>
+
             </div>
+
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

@@ -4,9 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Demande;
 use App\Entity\BonSortie;
+use App\Entity\Article;
+use App\Entity\Visite; 
+
 use App\Form\DemandeType;
 use App\Form\BonSortieType;
 use App\Form\VisiteType;
+use App\Form\StockType;
 use App\Repository\DemandeRepository;
 use App\Repository\BonSortieRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,7 +21,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class DashboardController extends AbstractController
 {
-  #[Route('/dashboard', name: 'app_dashboard')]
+    #[Route('/dashboard', name: 'app_dashboard')]
     public function index(
         Request $request, 
         DemandeRepository $demandeRepository, 
@@ -39,18 +43,66 @@ class DashboardController extends AbstractController
         // 📦 2. TRAITEMENT DES FORMULAIRES
         // =========================================================================
         
+        // A. FORMULAIRE DU STOCK (MAGASINIER)
+        $formStockView = null;
+        if ($userRole === 'ROLE_STOCK') {
+            $formStock = $this->createForm(StockType::class);
+            $formStock->handleRequest($request);
+
+            if ($formStock->isSubmitted() && $formStock->isValid()) {
+                $data = $formStock->getData();
+                
+                $seuilAlerte = (int)$request->request->get('seuil_alerte', 5);
+                $nomArticle = $data['article'];
+                $quantiteAjoutee = (int)$data['quantite'];
+
+                $articleRepository = $em->getRepository(Article::class);
+                $article = $articleRepository->findOneBy(['nom' => $nomArticle]);
+
+                if (!$article) {
+                    $article = new Article();
+                    $article->setNom($nomArticle);
+                    $article->setQuantite($quantiteAjoutee);
+                } else {
+                    $article->setQuantite($article->getQuantite() + $quantiteAjoutee);
+                }
+
+                $article->setSeuilAlerte($seuilAlerte);
+
+                $em->persist($article);
+                $em->flush();
+                
+                $this->addFlash('success', '📥 L\'article "' . $nomArticle . '" a bien été enregistré ! Stock total : ' . $article->getQuantite());
+                return $this->redirectToRoute('app_dashboard');
+            }
+            $formStockView = $formStock->createView();
+        }
+
+        // B. FORMULAIRE DE DEMANDE DE MATÉRIEL (SÉCURISÉ SELON LE STOCK)
         $demande = new Demande();
         $formDemande = $this->createForm(DemandeType::class, $demande);
         $formDemande->handleRequest($request);
+
         if ($formDemande->isSubmitted() && $formDemande->isValid()) {
+            $article = $em->getRepository(Article::class)->findOneBy(['nom' => $demande->getMateriel()]);
+            $quantiteDemandee = $demande->getQuantite() ?? 1;
+
+            if (!$article || $article->getQuantite() < $quantiteDemandee) {
+                $stockActuel = $article ? $article->getQuantite() : 0;
+                $this->addFlash('danger', '🛑 Demande impossible. Le matériel "' . $demande->getMateriel() . '" n\'est pas disponible ou insuffisant en stock (Disponible : ' . $stockActuel . ').');
+                return $this->redirectToRoute('app_dashboard');
+            }
+
             $demande->setDepartement($userDept); 
             $demande->setStatut('En attente'); 
             $em->persist($demande);
             $em->flush();
-            $this->addFlash('success', '📦 Votre demande de matériel a bien été envoyée !');
+            
+            $this->addFlash('success', '📦 Votre demande de matériel a été envoyée ! En attente de validation financière.');
             return $this->redirectToRoute('app_dashboard');
         }
 
+        // C. FORMULAIRE DE BON DE SORTIE
         $bonSortie = new BonSortie();
         $formBon = $this->createForm(BonSortieType::class, $bonSortie);
         $formBon->handleRequest($request);
@@ -65,45 +117,38 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('app_dashboard');
         }
 
-        // FORMULAIRE DE VISITE SÉCURISÉ (Pas de crash si la classe n'a pas d'entité)
-        // FORMULAIRE DE VISITE SÉCURISÉ (ENREGISTREMENT RÉEL)
+        // D. FORMULAIRE DE RESERVATION DE VISITE
         $formVisiteView = null;
         if ($userRole !== 'ROLE_GUERITE' && class_exists('App\Form\VisiteType')) {
-            // 1. On instancie la vraie entité Visite maintenant qu'elle existe !
-            $visite = new \App\Entity\Visite(); 
-            $formVisite = $this->createForm(VisiteType::class, $visite);
-            $formVisite->handleRequest($request);
-            
-            if ($formVisite->isSubmitted() && $formVisite->isValid()) {
-                // 2. On lui donne de force le statut attendu par la guérite
-                $visite->setStatut('RESERVE'); 
+            $visite = class_exists('App\Entity\Visite') ? new Visite() : new \stdClass(); 
+            if ($visite instanceof Visite) {
+                $formVisite = $this->createForm(VisiteType::class, $visite);
+                $formVisite->handleRequest($request);
                 
-                // 3. On sauvegarde en Base de Données
-                $em->persist($visite);
-                $em->flush();
-                
-                $this->addFlash('success', '🗓️ La visite a été réservée avec succès !');
-                return $this->redirectToRoute('app_dashboard');
+                if ($formVisite->isSubmitted() && $formVisite->isValid()) {
+                    $visite->setStatut('RESERVE'); 
+                    $em->persist($visite);
+                    $em->flush();
+                    
+                    $this->addFlash('success', '🗓️ La visite a été réservée avec succès !');
+                    return $this->redirectToRoute('app_dashboard');
+                }
+                $formVisiteView = $formVisite->createView();
             }
-            $formVisiteView = $formVisite->createView();
         }   
 
         // =========================================================================
-        // 🔍 3. RÉCUPÉRATION DES DONNÉES (CORRIGÉE POUR L'ADMIN)
-        // =========================================================================
-        // =========================================================================
-        // 🔍 3. RÉCUPÉRATION DES DONNÉES SÉCURISÉE
+        // 🔍 3. RÉCUPÉRATION DES DONNÉES (Nettoyée et sécurisée)
         // =========================================================================
         $demandes = [];
         $bonsSortie = [];
         $visites = [];
 
-        // L'accueil ne doit charger AUCUNE demande de matériel ni aucun bon de sortie
-        // L'accueil/réception ne charge aucune demande matérielle, uniquement les visites validées
         if ($userRole === 'ROLE_ACCUEIL' || $userRole === 'ROLE_RECEPTION') {
-            $visites = $em->getRepository('App\Entity\Visite')->findBy(['statut' => 'A_L_ACCUEIL'], ['id' => 'DESC']);
+            if (class_exists('App\Entity\Visite')) {
+                $visites = $em->getRepository(Visite::class)->findBy(['statut' => 'A_L_ACCUEIL'], ['id' => 'DESC']);
+            }
         } else {
-            // Logique pour les autres rôles (Stock, Compta, Coordon, Admin, Membres)
             if ($userRole === 'ROLE_STOCK' || $userRole === 'ROLE_COMPTA' || $userRole === 'ROLE_COORDON' || $userRole === 'ROLE_ADMIN') {
                 $demandes = $demandeRepository->findBy([], ['id' => 'DESC']);
             } else {
@@ -114,29 +159,26 @@ class DashboardController extends AbstractController
                 $bonsSortie = $bonSortieRepository->findBy(['statut' => 'Créé'], ['id' => 'DESC']);
             } elseif ($userRole === 'ROLE_GUERITE') {
                 $bonsSortie = $bonSortieRepository->findBy(['statut' => 'Validé Coordon'], ['id' => 'DESC']);
-                $visites = $em->getRepository('App\Entity\Visite')->findBy(['statut' => 'RESERVE'], ['id' => 'DESC']);
+                if (class_exists('App\Entity\Visite')) {
+                    $visites = $em->getRepository(Visite::class)->findBy(['statut' => 'RESERVE'], ['id' => 'DESC']);
+                }
             } else {
                 $bonsSortie = $bonSortieRepository->findBy(['departement' => $userDept], ['id' => 'DESC']);
             }
         }
+
         // =========================================================================
-        // 📊 4. LOGIQUE DES COMPTEURS
+        // 📊 4. LOGIQUE DES COMPTEURS (Garantit l'existence de $stats)
         // =========================================================================
         $stats = [
             'demandes_attente' => count($demandeRepository->findBy(['statut' => 'En attente'])),
             'bons_a_valider' => count($bonSortieRepository->findBy(['statut' => 'Créé'])),
             'bons_guerite' => count($bonSortieRepository->findBy(['statut' => 'Validé Coordon']))
         ];
-        // =========================================================================
 
         // =========================================================================
-        // 🚀 5. RENDU SELON LE RÔLE
+        // 🚀 5. RENDU UNIQUE DES TEMPLATES
         // =========================================================================
-        // =========================================================================
-      // =========================================================================
-        // 🚀 5. RENDU SELON LE RÔLE
-        // =========================================================================
-        
         if ($userRole === 'ROLE_ADMIN') {
             return $this->redirectToRoute('app_admin_dashboard');
         }
@@ -144,17 +186,20 @@ class DashboardController extends AbstractController
         if ($userRole === 'ROLE_GUERITE') {
             return $this->render('dashboard/guerite.html.twig', [
                 'bonsSortie' => $bonsSortie,
-                'visites' => $visites, // On envoie les visites RESERVES à la guérite
+                'visites' => $visites,
                 'userRole' => $userRole,
                 'stats' => $stats
             ]);
         }
 
+        // Le bloc Accueil est maintenant parfaitement placé ici, après la création de $stats !
         if ($userRole === 'ROLE_ACCUEIL' || $userRole === 'ROLE_RECEPTION') {
             return $this->render('dashboard/accueil.html.twig', [
                 'visites' => $visites,
                 'userRole' => $userRole,
-                'stats' => $stats
+                'stats' => $stats,
+                'formVisite' => $formVisiteView, 
+                'formBon' => $formBon->createView() 
             ]);
         }
 
@@ -167,46 +212,80 @@ class DashboardController extends AbstractController
             ]);
         }
 
-        // Pour ROLE_USER1, ROLE_USER2, ROLE_STOCK et ROLE_COORDON
+        if ($userRole === 'ROLE_STOCK') {
+            $articles = $em->getRepository(Article::class)->findAll();
+
+            return $this->render('dashboard/stock.html.twig', [
+                'demandes' => $demandes,
+                'userRole' => $userRole,
+                'stats' => $stats,
+                'formStock' => $formStockView,
+                'articles' => $articles 
+            ]);
+        }
+
         return $this->render('dashboard/membre.html.twig', [
             'demandes' => $demandes,
             'bonsSortie' => $bonsSortie,
             'userRole' => $userRole,
             'stats' => $stats,
-            'formDemande' => $formDemande, // Plus de .view() ici pour éviter les conflits si null
-            'formBon' => $formBon,
+            'formDemande' => $formDemande->createView(), 
+            'formBon' => $formBon->createView(),
             'formVisite' => $formVisiteView 
         ]);
-    } // Fin de la fonction index// <-- CETTE ACCOLADE MANQUAIT ICI POUR FERMER PROPREMENT LA MÉTHODE index() !
+    } 
 
     // =========================================================================
-    // 6. CIRCUITS DE VALIDATION LOGISTIQUES
+    // 6. CIRCUITS DE VALIDATION LOGISTIQUES CORRIGÉS
     // =========================================================================
-
-    #[Route('/dashboard/livrer/{id}', name: 'app_demande_livrer', methods: ['POST'])]
-    public function livrer(Demande $demande, EntityManagerInterface $em): Response
-    {
-        $demande->setStatut('Livré par le Stock');
-        $em->flush();
-        $this->addFlash('success', '🚚 Le matériel a été marqué comme livré.');
-        return $this->redirectToRoute('app_dashboard');
-    }
-
-    #[Route('/dashboard/recevoir/{id}', name: 'app_demande_recevoir', methods: ['POST'])]
-    public function recevoir(Demande $demande, EntityManagerInterface $em): Response
-    {
-        $demande->setStatut('Reçu / Clôturé');
-        $em->flush();
-        $this->addFlash('success', '✅ Confirmation de réception validée.');
-        return $this->redirectToRoute('app_dashboard');
-    }
 
     #[Route('/dashboard/compta/valider/{id}', name: 'app_demande_compta_valider', methods: ['POST'])]
     public function validerCompta(Demande $demande, EntityManagerInterface $em): Response
     {
+        $article = $em->getRepository(Article::class)->findOneBy(['nom' => $demande->getMateriel()]);
+        $quantiteDemandee = $demande->getQuantite() ?? 1;
+
+        if (!$article || $article->getQuantite() < $quantiteDemandee) {
+            $stockActuel = $article ? $article->getQuantite() : 0;
+            $this->addFlash('danger', '🛑 Impossible de valider le budget. Le matériel "' . $demande->getMateriel() . '" n\'est pas assez en stock au dépôt. La demande reste en attente.');
+            return $this->redirectToRoute('app_dashboard');
+        }
+
         $demande->setStatut('Validé Compta');
         $em->flush();
-        $this->addFlash('success', '💰 Budget accordé avec succès !');
+
+        $this->addFlash('success', '💰 Budget accordé avec succès ! Le dépôt a maintenant l\'autorisation de livrer le matériel.');
+        return $this->redirectToRoute('app_dashboard');
+    }
+
+    #[Route('/dashboard/livrer/{id}', name: 'app_demande_livrer', methods: ['POST'])]
+    public function livrer(Demande $demande, EntityManagerInterface $em): Response
+    {
+        if ($demande->getStatut() !== 'Validé Compta') {
+            $this->addFlash('danger', '❌ Action interdite. Cette demande n\'a pas encore reçu la validation budgétaire de la comptabilité.');
+            return $this->redirectToRoute('app_dashboard');
+        }
+
+        $article = $em->getRepository(Article::class)->findOneBy(['nom' => $demande->getMateriel()]);
+        
+        if ($article) {
+            $quantiteDemandee = $demande->getQuantite() ?? 1; 
+            $nouvelleQuantite = $article->getQuantite() - $quantiteDemandee; 
+
+            if ($nouvelleQuantite < 0) {
+                $this->addFlash('danger', '❌ Erreur de dernière minute : Le stock est devenu insuffisant.');
+                return $this->redirectToRoute('app_dashboard');
+            }
+            
+            $article->setQuantite($nouvelleQuantite);
+            $demande->setStatut('Livré par le Stock');
+            $em->flush();
+            
+            $this->addFlash('success', '🚚 Le matériel a été marqué comme livré et déduit du stock.');
+        } else {
+            $this->addFlash('danger', '❌ Article introuvable en base de données.');
+        }
+
         return $this->redirectToRoute('app_dashboard');
     }
 
@@ -227,24 +306,22 @@ class DashboardController extends AbstractController
         $this->addFlash('success', '🚪 Sortie physique autorisée.');
         return $this->redirectToRoute('app_dashboard');
     }
+
     #[Route('/dashboard/visite/valider/{id}', name: 'app_visite_valider_guerite', methods: ['POST'])]
-    public function validerEntreeGuerite(\App\Entity\Visite $visite, EntityManagerInterface $em): Response
+    public function validerEntreeGuerite(Visite $visite, EntityManagerInterface $em): Response
     {
-        // La guérite valide le badge physique et envoie le visiteur à l'accueil
         $visite->setStatut('A_L_ACCUEIL');
         $em->flush();
-
         $this->addFlash('success', '🪪 Entrée du visiteur validée ! Transmis à l\'accueil.');
         return $this->redirectToRoute('app_dashboard');
     }
 
     #[Route('/dashboard/visite/cloturer/{id}', name: 'app_visite_cloturer', methods: ['POST'])]
-    public function cloturerVisite(\App\Entity\Visite $visite, EntityManagerInterface $em): Response
+    public function cloturerVisite(Visite $visite, EntityManagerInterface $em): Response
     {
         $visite->setStatut('TERMINE');
         $em->flush();
-
         $this->addFlash('success', '✅ Visite clôturée. Le départ du visiteur a été enregistré.');
         return $this->redirectToRoute('app_dashboard');
     }
-} // <-- Tout dernier crochet qui ferme la classe DashboardController
+}
