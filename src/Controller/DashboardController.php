@@ -357,4 +357,16 @@ class DashboardController extends AbstractController
         $this->addFlash('success', '🖋️ Le bon de sortie a été signé et validé par le coordonnateur.');
         return $this->redirectToRoute('app_dashboard');
     }
-}
+
+    #[Route('/dashboard/visite/cloturer/{id}', name: 'app_visite_cloturer', methods: ['POST'])]
+    public function cloturerVisite(Visite $visite, EntityManagerInterface $em): Response
+    {
+        // On change le statut pour indiquer que le visiteur est parti
+        $visite->setStatut('TERMINE'); // Ou le nom du statut que tu utilises pour les départs
+        
+        $em->flush();
+        
+        $this->addFlash('success', '🚪 Le départ du visiteur ' . $visite->getNomVisiteur() . ' a bien été signalé.');
+        return $this->redirectToRoute('app_dashboard');
+    }
+} // Fin de la classe DashboardController
