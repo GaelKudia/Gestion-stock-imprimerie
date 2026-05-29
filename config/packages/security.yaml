@@ -1,7 +1,14 @@
 security:
-    # 👑 HIÉRARCHIE DES RÔLES : L'Admin hérite de TOUS les droits des autres services !
+    # 👑 HIÉRARCHIE DES RÔLES
     role_hierarchy:
-        ROLE_ADMIN: [ROLE_COORDON, ROLE_STOCK, ROLE_COMPTA, ROLE_GUERITE, ROLE_USER]
+        ROLE_COORDON:     ROLE_USER
+        ROLE_STOCK:       ROLE_USER
+        ROLE_COMPTA:      ROLE_USER
+        ROLE_GUERITE:     ROLE_USER
+        ROLE_ACCUEIL:     ROLE_USER
+        ROLE_RECEPTION:   ROLE_USER
+        ROLE_DG:          [ROLE_COORDON, ROLE_STOCK, ROLE_COMPTA]
+        ROLE_ADMIN:       [ROLE_DG, ROLE_GUERITE, ROLE_ACCUEIL, ROLE_RECEPTION, ROLE_ALLOWED_TO_SWITCH]
 
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
@@ -43,8 +50,8 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
-        # 🔐 Sécurité globale au niveau de l'URL pour ton tableau de bord
-        #- { path: ^/dashboard, roles: [ROLE_USER, ROLE_COORDON, ROLE_STOCK, ROLE_COMPTA, ROLE_GUERITE, ROLE_ADMIN] }
+        # 🔐 Autorise l'accès au Dashboard pour TOUS les rôles de l'imprimerie
+        - { path: ^/dashboard, roles: [ROLE_ADMIN, ROLE_COORDON, ROLE_STOCK, ROLE_COMPTA, ROLE_GUERITE, ROLE_DG, ROLE_USER] }
         - { path: ^/user, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: PUBLIC_ACCESS }
 

@@ -20,6 +20,7 @@ class UserType extends AbstractType
             ])
             ->add('roles', ChoiceType::class, [
                 'choices' => [
+                    'Direction Générale (DG / Directeur)' => 'ROLE_DG',
                     'Coordonnateur' => 'ROLE_COORDON',
                     'Guérite / Sécurité' => 'ROLE_GUERITE',
                     'Comptabilité' => 'ROLE_COMPTA',
@@ -28,7 +29,8 @@ class UserType extends AbstractType
                     'Administrateur' => 'ROLE_ADMIN',
                 ],
                 'multiple' => true,
-                'expanded' => false,
+                'expanded' => false, // Garde un menu déroulant, mais comme multiple = true, l'admin pourra maintenir Ctrl pour sélectionner
+                'label' => 'Attribuer un rôle / Service', // 👈 LA VIRGULE CORRIGÉE ICI !
                 'attr' => ['class' => 'form-control']
             ])
             ->add('password', PasswordType::class, [

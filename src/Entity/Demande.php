@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\DemandeRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DemandeRepository::class)]
@@ -24,6 +25,20 @@ class Demande
 
     #[ORM\Column(length: 50)]
     private ?string $statut = null;
+
+    // 🗺️ Nouvelle colonne pour stocker la commune de destination à Kinshasa
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $destination = null;
+
+    // 📅 Nouvelle colonne pour enregistrer la date exacte (Crucial pour tes filtres Jour J et Rapports X à Y)
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $createdAt = null;
+
+    // ⚙️ Le constructeur initialise automatiquement la date au moment de la demande
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+    }
 
     public function getId(): ?int
     {
@@ -74,6 +89,32 @@ class Demande
     public function setStatut(string $statut): static
     {
         $this->statut = $statut;
+
+        return $this;
+    }
+
+    // 🟢 Getter et Setter pour la Destination (Commune)
+    public function getDestination(): ?string
+    {
+        return $this->destination;
+    }
+
+    public function setDestination(?string $destination): static
+    {
+        $this->destination = $destination;
+
+        return $this;
+    }
+
+    // 🟢 Getter et Setter pour la Date de création
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
 
         return $this;
     }
